@@ -10,7 +10,7 @@ const {
   fromTokenSlug,
   toTokenSlug,
 } = require("./utils");
-const redis = require("./redis");
+// const redis = require("./redis");
 
 const app = express();
 
@@ -20,32 +20,32 @@ app.get("/healthz", (_, res) => {
   res.send({ message: "OK" }).status(200);
 });
 
-app.delete(
-  "/clear/:address/:tokenId",
-  basicAuth({
-    authorizer: (_u, p) => basicAuth.safeCompare(p, baPassword),
-  }),
-  async (req, res) => {
-    const { address, tokenId } = req.params;
-    if (!address || !isValidContract(address) || !isNumeric(tokenId)) {
-      return res
-        .send({ message: "Please, provide a valid token address and token id" })
-        .status(400);
-    }
+// app.delete(
+//   "/clear/:address/:tokenId",
+//   basicAuth({
+//     authorizer: (_u, p) => basicAuth.safeCompare(p, baPassword),
+//   }),
+//   async (req, res) => {
+//     const { address, tokenId } = req.params;
+//     if (!address || !isValidContract(address) || !isNumeric(tokenId)) {
+//       return res
+//         .send({ message: "Please, provide a valid token address and token id" })
+//         .status(400);
+//     }
 
-    try {
-      const tokenSlug = toTokenSlug(address, tokenId);
-      const deleted = await redis.del(tokenSlug);
-      res.send({ deleted }).status(200);
-    } catch (err) {
-      res
-        .send({
-          message: `Could not delete metadata for provided token: ${err.message}`,
-        })
-        .status(400);
-    }
-  }
-);
+//     try {
+//       const tokenSlug = toTokenSlug(address, tokenId);
+//       const deleted = await redis.del(tokenSlug);
+//       res.send({ deleted }).status(200);
+//     } catch (err) {
+//       res
+//         .send({
+//           message: `Could not delete metadata for provided token: ${err.message}`,
+//         })
+//         .status(400);
+//     }
+//   }
+// );
 
 app.get("/metadata/:address/:tokenId", async (req, res) => {
   const { address, tokenId } = req.params;

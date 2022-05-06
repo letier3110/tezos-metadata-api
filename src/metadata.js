@@ -12,7 +12,7 @@ const {
 const BigNumber = require("bignumber.js");
 const fixtures = require("./mainnet-fixtures");
 const Tezos = require("./tezos");
-const redis = require("./redis");
+// const redis = require("./redis");
 const { toTokenSlug, parseBoolean } = require("./utils");
 
 const RETRY_PARAMS = {
@@ -23,9 +23,8 @@ const RETRY_PARAMS = {
 const ONE_WEEK_IN_SECONDS = 60 * 60 * 24 * 7;
 const FIVE_MIN_IN_SECONDS = 60 * 5;
 
-const getContractForMetadata = memoize((address) =>
-  Tezos.contract.at(address, compose(tzip12, tzip16))
-);
+const getContractForMetadata = (address) =>
+  Tezos.contract.at(address, compose(tzip12, tzip16));
 
 const getTzip12Metadata = async (contract, tokenId) => {
   let tzip12Metadata = {};
@@ -82,32 +81,37 @@ const getMetadataFromUri = async (contract, tokenId) => {
 };
 
 async function getTokenMetadata(contractAddress, tokenId = 0) {
+  consola.log("w0");
   const slug = toTokenSlug(contractAddress, tokenId);
   if (fixtures.has(slug)) {
     return fixtures.get(slug);
   }
 
-  let cached; // : undefined | null | Metadata{}
-  try {
-    const cachedStr = await redis.get(slug);
-    if (cachedStr) cached = JSON.parse(cachedStr);
-  } catch {}
+  // let cached; // : undefined | null | Metadata{}
+  // try {
+  //   // const cachedStr = await redis.get(slug);
+  //   if (cachedStr) cached = JSON.parse(cachedStr);
+  // } catch {}
 
-  if (cached !== undefined) {
-    if (cached === null) {
-      throw new NotFoundTokenMetadata();
-    }
+  // if (cached !== undefined) {
+  //   if (cached === null) {
+  //     throw new NotFoundTokenMetadata();
+  //   }
 
-    return cached;
-  }
+  //   return cached;
+  // }
 
   // Flow based on Taquito TZIP-012 & TZIP-016 implementaion
   // and https://tzip.tezosagora.org/proposal/tzip-21
   try {
+    console.log("q0");
     const contract = await getContractForMetadata(contractAddress);
+    consola.log("q");
 
     const tzip12Metadata = await getTzip12Metadata(contract, tokenId);
+    consola.log("a");
     const metadataFromUri = await getMetadataFromUri(contract, tokenId);
+    consola.log("b");
 
     const rawMetadata = { ...metadataFromUri, ...tzip12Metadata };
 
@@ -137,21 +141,21 @@ async function getTokenMetadata(contractAddress, tokenId = 0) {
       artifactUri: rawMetadata.artifactUri,
     };
 
-    redis
-      .set(slug, JSON.stringify(result), "EX", ONE_WEEK_IN_SECONDS, "NX")
-      .catch((err) => {
-        console.warn("Failed to set cache", err);
-      });
+    // redis
+    //   .set(slug, JSON.stringify(result), "EX", ONE_WEEK_IN_SECONDS, "NX")
+    //   .catch((err) => {
+    //     console.warn("Failed to set cache", err);
+    //   });
 
     return result;
   } catch (err) {
     consola.error(err);
 
-    redis
-      .set(slug, JSON.stringify(null), "EX", FIVE_MIN_IN_SECONDS, "NX")
-      .catch((err) => {
-        console.warn("Failed to set cache", err);
-      });
+    // redis
+    //   .set(slug, JSON.stringify(null), "EX", FIVE_MIN_IN_SECONDS, "NX")
+    //   .catch((err) => {
+    //     console.warn("Failed to set cache", err);
+    //   });
 
     throw new NotFoundTokenMetadata();
   }
